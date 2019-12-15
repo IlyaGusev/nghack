@@ -101,39 +101,42 @@ def rank_hypotheses(toks, hypotheses, grams, leven_penalty=0.2, order=5):
     return d
 
 
-def denormalize(orig, toks0, toks):
+def denormalize(orig, original_tokens, filtered_tokens, new_tokens):
+    if tuple(new_tokens) == tuple(filtered_tokens):
+        # если замен не было, возвращем исходный текст, чтобы нечаянно его не попортить
+        return orig
     result = ' '
     i0 = 0
     i1 = 0
-    while i0 < len(toks0):
-        #print('"{}  {} {}" "{}" '.format(result, i0, i1, toks0[i0]))
+    while i0 < len(original_tokens):
+        # print('"{}  {} {}" "{}" '.format(result, i0, i1, original_tokens[i0]))
         prev_is_punct = result[-1] in '.?-:!'
-        if i0 < len(toks0) and i1 < len(toks) and toks0[i0].lower() == toks[i1].lower():
+        if i0 < len(original_tokens) and i1 < len(new_tokens) and original_tokens[i0].lower() == new_tokens[i1].lower():
             if not prev_is_punct:
                 result = result + ' '
-            result = result + toks0[i0]
+            result = result + original_tokens[i0]
             i0 += 1
             i1 += 1
-        elif not toks0[i0].isalpha():
-            if toks0[i0].isnumeric():
+        elif not original_tokens[i0].isalpha():
+            if original_tokens[i0].isnumeric():
                 if not prev_is_punct:
                     result = result + ' '
-            result = result + toks0[i0]
+            result = result + original_tokens[i0]
             i0 += 1
-        elif i0 < len(toks0) and i1 < len(toks):
-            #print('change "{}" -> "{}"'.format(toks0[i0], toks[i1]))
-            if abs(len(toks0[i0]) - len(toks[i1])) <= 1: # probably, the same token, but with correction
-                tok = toks[i1]
-                if toks0[i0][0].isupper():
+        elif i0 < len(original_tokens) and i1 < len(new_tokens):
+            # print('change "{}" -> "{}"'.format(original_tokens[i0], new_tokens[i1]))
+            if abs(len(original_tokens[i0]) - len(new_tokens[i1])) <= 1: # probably, the same token, but with correction
+                tok = new_tokens[i1]
+                if original_tokens[i0][0].isupper():
                     tok = tok.capitalize()
                 if not prev_is_punct:
                     result = result + ' '
                     result = result + tok
                 i0 += 1
                 i1 += 1
-            elif len(toks0[i0]) > len(toks[i1]):
-                tok = toks[i1] + ' ' + toks[i1+1]
-                if toks0[i0][0].isupper():
+            elif len(original_tokens[i0]) > len(new_tokens[i1]):
+                tok = new_tokens[i1] + ' ' + new_tokens[i1+1]
+                if original_tokens[i0][0].isupper():
                     tok = tok.capitalize()
                 if not prev_is_punct:
                     result = result + ' '
@@ -141,8 +144,8 @@ def denormalize(orig, toks0, toks):
                 i0 += 1
                 i1 += 2
             else:
-                tok = toks[i1]
-                if toks0[i0][0].isupper():
+                tok = new_tokens[i1]
+                if original_tokens[i0][0].isupper():
                     tok = tok.capitalize()
                 if not prev_is_punct:
                     result = result + ' '
@@ -161,14 +164,14 @@ def denormalize(orig, toks0, toks):
 
 
 def make_ngram_correction(text, hypo_makers, grams):
-    toks0 = wordpunct_tokenize(text)
-    toks = [t.lower() for t in toks0 if t.isalpha()]
-    hypos = [toks]
+    original_tokens = wordpunct_tokenize(text)
+    filtered_tokens = [t.lower() for t in original_tokens if t.isalpha()]
+    hypos = [filtered_tokens]
     for maker in hypo_makers:
-        hypos.extend(maker(toks))
-    d = rank_hypotheses(toks, hypos, grams=grams, leven_penalty=0.15, order=3, )
+        hypos.extend(maker(filtered_tokens))
+    d = rank_hypotheses(filtered_tokens, hypos, grams=grams, leven_penalty=0.15, order=3, )
     new_text = d.text.iloc[0]
-    result = denormalize(text, toks0, new_text.split())
+    result = denormalize(text, original_tokens, filtered_tokens, new_text.split())
     return result
 
 
