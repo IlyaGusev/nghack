@@ -1,6 +1,10 @@
 import sys
 import fasttext
 import pandas
+import pickle
+import scipy
+
+import numpy as np
 
 
 TO_LABEL = {
@@ -31,8 +35,12 @@ if __name__ == '__main__':
 
     df_test = pandas.read_csv(input_csv, index_col='id')
 
-    model_path = "models/intent.ftz"
-    model = fasttext.load_model(model_path)
+    ft_model_path = "models/intent.ftz"
+    ft_model = fasttext.load_model(ft_model_path)
+
+    tf_model = pickle.load(open("models/intent_tfidf.bin", "rb"))
+    tf_char_vectorizer = pickle.load(open("models/char_vectorizer.bin", "rb"))
+    tf_word_vectorizer = pickle.load(open("models/word_vectorizer.bin", "rb"))
 
     def process_text(text):
         text = str(text).strip().lower()
@@ -40,10 +48,30 @@ if __name__ == '__main__':
         text = text.strip("“ ”‘ ’«»\"'?!.;: ")
         return text
 
+    df_test['text'].fillna('', inplace=True)
     texts = [process_text(text) for text in df_test["text"].tolist()]
-    preds = model.predict(texts)
 
-    labels = [to_label(label[0]) for label in preds[0]]
+    # ft
+    ft_preds_raw = ft_model.predict(texts, k=32)
+    ft_preds = list()
+    for labels, probs in zip(ft_preds_raw[0], ft_preds_raw[1]):
+        d = sorted(list(zip(labels, probs)), key=lambda x: int(x[0].replace('__label__', '')))
+        (labels, probs) = zip(*d)
+        ft_preds.append(probs)
+
+    # tf
+    X_val_chars = tf_char_vectorizer.transform(df_test['text'].tolist())
+    X_val_words = tf_word_vectorizer.transform(df_test['text'].tolist())
+
+    X_val = scipy.sparse.hstack([X_val_chars, X_val_words])
+    tf_preds = tf_model.predict_proba(X_val)
+
+    # combine
+    preds = list()
+    for pr1, pr2 in zip(tf_preds, ft_preds):
+        preds.append(f'__label__{np.argmax(((pr1 + pr2) / 2))}')
+
+    labels = [to_label(label) for label in preds]
     df_test['label'] = labels
 
     df_test.to_csv(output_csv)
