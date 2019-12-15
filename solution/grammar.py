@@ -2,6 +2,7 @@ import sys
 import argparse
 import pandas
 import fasttext
+import pymorphy2
 from sentencepiece import SentencePieceProcessor as sp_processor
 from razdel import tokenize
 from razdel.substring import Substring
@@ -27,6 +28,11 @@ substrings_fixes = {
     "как то так же": "как-то так же",
     "бес толку": "бестолку"
 }
+
+_ALLOWED_POS_TAGS_FOR_TAKI = {'ADVB', 'VERB', 'INFN', 'PRCL'}
+_ALLOWED_POS_TAGS_FOR_TO = {'ADVB', 'NPRO'}
+
+_MORPH = pymorphy2.MorphAnalyzer()
 
 
 def _fix_dictionary(original_sentences):
@@ -105,6 +111,43 @@ def _fix_izza(fixed_sentences):
     return [_fix_izza_on_text(text) for text in fixed_sentences]
 
 
+def _is_good_for_particle(prev_token, allowed_pos_tags):
+    for parse in _MORPH.parse(prev_token):
+        if any(tag in parse.tag for tag in allowed_pos_tags):
+            return True
+    return False
+
+
+def _fix_particles_on_text(text):
+    tokens = list(tokenize(text))
+    result_text = ''
+    prev_end = 0
+    for i, token in enumerate(tokens):
+        if token.text not in {'то', 'либо', 'нибудь', 'таки'}:
+            result_text += text[prev_end: token.start] + token.text
+        elif token.text == 'таки':
+            if i > 0 and _is_good_for_particle(tokens[i - 1].text, _ALLOWED_POS_TAGS_FOR_TAKI):
+                result_text += '-' + token.text
+            else:
+                result_text += text[prev_end: token.start] + token.text
+        else:
+            if i > 0 and _is_good_for_particle(tokens[i - 1].text, _ALLOWED_POS_TAGS_FOR_TO):
+                result_text += '-' + token.text
+            else:
+                result_text += text[prev_end: token.start] + token.text
+
+        prev_end = token.stop
+
+    if tokens:
+        result_text += text[tokens[-1].stop:]
+
+    return result_text
+
+
+def _fix_particles(fixed_sentences):
+    return [_fix_particles_on_text(text) for text in fixed_sentences]
+
+
 def fix_mistakes(input_csv, output_csv):
     df_test = pandas.read_csv(input_csv, index_col='id')
     original_sentences = df_test['sentence_with_a_mistake'].tolist()
@@ -112,6 +155,7 @@ def fix_mistakes(input_csv, output_csv):
     fixed_sentences = _fix_dictionary(original_sentences)
     _fix_tsya(fixed_sentences)
     fixed_sentences = _fix_izza(fixed_sentences)
+    fixed_sentences = _fix_particles(fixed_sentences)
 
     df_test['correct_sentence'] = fixed_sentences
     df_test.to_csv(output_csv)
@@ -123,4 +167,3 @@ if __name__ == '__main__':
     parser.add_argument('output_csv', help="path to output file")
     args = parser.parse_args()
     fix_mistakes(**vars(args))
-
