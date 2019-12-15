@@ -4,6 +4,7 @@ import pandas
 import fasttext
 from sentencepiece import SentencePieceProcessor as sp_processor
 from razdel import tokenize
+from razdel.substring import Substring
 
 tokens_fixes = {
     "бес": "без",
@@ -78,12 +79,38 @@ def _fix_tsya(fixed_sentences):
             fixed_sentences[i] = sentence.replace("ться", "тся")
 
 
+def _fix_izza_on_text(text):
+    tokens = list(tokenize(text))
+    result_tokens = []
+    i = 0
+    while i < len(tokens) - 1:
+        if tokens[i].text.lower() == 'из' and tokens[i+1].text.lower() == 'за':
+            result_tokens.append(
+                Substring(tokens[i].start, tokens[i+1].stop, tokens[i].text + '-' + tokens[i+1].text)
+            )
+            i += 2
+        else:
+            result_tokens.append(tokens[i])
+            i += 1
+
+    fixed_sentence = text
+    for token in result_tokens:
+        fixed_sentence = fixed_sentence[:token.start] + token.text + fixed_sentence[token.stop:]
+
+    return fixed_sentence
+
+
+def _fix_izza(fixed_sentences):
+    return [_fix_izza_on_text(text) for text in fixed_sentences]
+
+
 def fix_mistakes(input_csv, output_csv):
     df_test = pandas.read_csv(input_csv, index_col='id')
     original_sentences = df_test['sentence_with_a_mistake'].tolist()
 
     fixed_sentences = _fix_dictionary(original_sentences)
     _fix_tsya(fixed_sentences)
+    fixed_sentences = _fix_izza(fixed_sentences)
 
     df_test['correct_sentence'] = fixed_sentences
     df_test.to_csv(output_csv)
