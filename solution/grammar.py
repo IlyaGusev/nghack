@@ -7,6 +7,13 @@ from sentencepiece import SentencePieceProcessor as sp_processor
 from razdel import tokenize
 from razdel.substring import Substring
 
+
+from grammar_nram_lm import load_grams, make_ngram_correction, make_hypotheses_neni
+
+grams = load_grams()
+
+
+
 tokens_fixes = {
     "бес": "без",
     "вши": "ваши",
@@ -148,6 +155,18 @@ def _fix_particles(fixed_sentences):
     return [_fix_particles_on_text(text) for text in fixed_sentences]
 
 
+def _fix_neni(sentences):
+    return [
+        make_ngram_correction(
+            text=s,
+            hypo_makers=[make_hypotheses_neni],
+            grams=grams,
+        )
+        for s in sentences
+    ]
+
+
+
 def fix_mistakes(input_csv, output_csv):
     df_test = pandas.read_csv(input_csv, index_col='id')
     original_sentences = df_test['sentence_with_a_mistake'].tolist()
@@ -156,6 +175,7 @@ def fix_mistakes(input_csv, output_csv):
     _fix_tsya(fixed_sentences)
     fixed_sentences = _fix_izza(fixed_sentences)
     fixed_sentences = _fix_particles(fixed_sentences)
+    fixed_sentences = _fix_neni(fixed_sentences)
 
     df_test['correct_sentence'] = fixed_sentences
     df_test.to_csv(output_csv)
