@@ -28,15 +28,15 @@ def train(input_file):
             text = text.replace("\n", " ").lower()
             tjsya_count = text.count("ться")
             tsya_count = text.count("тся")
-            if (tjsya_count + tsya_count) == 1:
+            if (tjsya_count != 0 and  tsya_count == 0) or (tjsya_count == 0 and  tsya_count != 0):
                 records.append((text, label))
     random.shuffle(records)
     border = int(0.8 * len(records))
     train = records[:border]
     val = records[border:]
 
-    model_path = "subword_models"
-    if False:
+    model_path = "subword_model"
+    if True:
         temp = tempfile.NamedTemporaryFile(mode="w", delete=False)
         for text, _ in train:
             temp.write(text + "\n")
@@ -44,7 +44,7 @@ def train(input_file):
         cmd = "--input={} --model_prefix={} --vocab_size={} --model_type={}".format(
             temp.name,
             model_path,
-            50000,
+            30000,
             "bpe"
         )
         sp_trainer.Train(cmd)
