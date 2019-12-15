@@ -8,7 +8,7 @@ from razdel import tokenize
 from razdel.substring import Substring
 
 
-from grammar_nram_lm import load_grams, make_ngram_correction, make_hypotheses_neni
+from grammar_ngram_lm import load_grams, make_ngram_correction, make_hypotheses_neni
 
 grams = load_grams()
 

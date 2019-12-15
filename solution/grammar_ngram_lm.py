@@ -90,7 +90,7 @@ def get_log_proba(toks, grams, order=3, prnt=False):
 def rank_hypotheses(toks, hypotheses, grams, leven_penalty=0.2, order=5):
     scores = []
     for hypo in hypotheses:
-        scores.append([' '.join(hypo), get_log_proba(hypo, order=order), len(hypo)])
+        scores.append([' '.join(hypo), get_log_proba(hypo, grams=grams, order=order), len(hypo)])
 
     d = pd.DataFrame(scores)
     d.columns = ['text', 'lm', 'n']
