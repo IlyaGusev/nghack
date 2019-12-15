@@ -105,6 +105,34 @@ def _fix_nn(fixed_sentences,
         if nn_label == 0 and nn_proba > nn_border and nn_count == 1:
             fixed_sentences[i] = sentence.replace("нн", "н")
 
+def _fix_merge_to(fixed_sentences,
+                  border=0.65,
+                  model_path="models/to_merge_predictor.bin",
+                  bpe_model_path="models/opencorpora_bpe.model"):
+    predictor = fasttext.load_model(model_path)
+    bpe_model = sp_processor()
+    bpe_model.load(bpe_model_path)
+
+    for i, sentence in enumerate(fixed_sentences):
+        text = sentence
+        chto_bi_count = text.count("что бы")
+        to_je_count = text.count("то же")
+        tak_je_count = text.count("так же")
+        if chto_bi_count + to_je_count + tak_je_count != 1:
+            continue
+        processed_sentence = " ".join(bpe_model.EncodeAsPieces(sentence.lower()))
+        predictions = predictor.predict(processed_sentence)
+        proba = float(predictions[1][0])
+        label = int(predictions[0][0][-1])
+        if label == 1 or proba < border:
+            continue
+        if chto_bi_count == 1:
+            fixed_sentences[i] = sentence.replace("что бы", "чтобы")
+        elif to_je_count == 1:
+            fixed_sentences[i] = sentence.replace("то же", "тоже")
+        elif tak_je_count == 1:
+            fixed_sentences[i] = sentence.replace("так же", "также")
+
 
 def _fix_izza_on_text(text):
     tokens = list(tokenize(text))
@@ -177,6 +205,7 @@ def fix_mistakes(input_csv, output_csv):
     _fix_nn(fixed_sentences)
     fixed_sentences = _fix_izza(fixed_sentences)
     fixed_sentences = _fix_particles(fixed_sentences)
+    _fix_merge_to(fixed_sentences)
 
     df_test['correct_sentence'] = fixed_sentences
     df_test.to_csv(output_csv)
