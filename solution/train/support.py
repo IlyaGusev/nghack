@@ -53,7 +53,11 @@ def train(train_data_path, output_path, val_data_path=None):
     model.fit(X, train_data['class'])
 
     if val_data is not None:
-        val_preds = model.predict(val_data['text'])
+        X_val_chars = char_vectorizer.transform(val_data['text'])
+        X_val_words = word_vectorizer.transform(val_data['text'])
+
+        X_val = scipy.sparse.hstack([X_val_chars, X_val_words])
+        val_preds = model.predict(X_val)
         print('F1-score = {:.2%}'.format(f1_score(val_data['class'], val_preds, average='macro')))
 
     joblib.dump((model, char_vectorizer, word_vectorizer), output_path, protocol=pickle.HIGHEST_PROTOCOL)
