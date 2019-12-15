@@ -1,9 +1,9 @@
 {
-    "image": "datasouls/python",
+    "image": "phoenix120/nghack",
     "entry_points": {
-        "intent": "python intent.py {input_csv} {output_csv}",
-        "grammar": "python grammar.py {input_csv} {output_csv}",
-        "support": "python support.py {input_csv} {output_csv}",
-        "callcenter": "python callcenter.py {input_csv} {output_csv}"
+        "intent": "python3 intent.py {input_csv} {output_csv}",
+        "grammar": "python3 grammar.py {input_csv} {output_csv}",
+        "support": "python3 support.py {input_csv} {output_csv}",
+        "callcenter": "python3 callcenter.py {input_csv} {output_csv}"
     }
 }
