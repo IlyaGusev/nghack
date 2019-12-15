@@ -71,10 +71,10 @@ if __name__ == '__main__':
     df_test = pd.read_csv(input_csv, index_col='id')
 
     model = catboost.CatBoostClassifier()
-    model.load_model('models/call_center_catboost.model')
+    model.load_model('../models/call_center_catboost.model')
 
     x_test = extract_features(df_test)
-    prediction = model.predict(x_test).astype(int)
+    prediction = (model.predict_proba(x_test)[:, 1] > 0.42).astype(int)
 
     df_test['Метка'] = prediction
     df_test.to_csv(output_csv)
