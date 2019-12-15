@@ -70,9 +70,10 @@ def _fix_dictionary(original_sentences):
     return fixed_sentences
 
 
-def _fix_tsya(fixed_sentences):
-    tsya_model_path = "models/tsya_predictor.bin"
-    bpe_model_path = "models/grammar_bpe.model"
+def _fix_tsya(fixed_sentences,
+              tsya_border=0.65,
+              tsya_model_path="models/tsya_predictor.bin",
+              bpe_model_path="models/grammar_bpe.model"):
     tsya_predictor = fasttext.load_model(tsya_model_path)
     bpe_model = sp_processor()
     bpe_model.load(bpe_model_path)
@@ -82,15 +83,34 @@ def _fix_tsya(fixed_sentences):
         tsjya_count = sentence.count("ться")
         if tsya_count + tsjya_count != 1:
             continue
-        processed_sentence = " ".join(bpe_model.EncodeAsPieces(sentence))
+        processed_sentence = " ".join(bpe_model.EncodeAsPieces(sentence.lower()))
         tsya_predictions = tsya_predictor.predict(processed_sentence)
         tsya_proba = float(tsya_predictions[1][0])
         tsya_label = int(tsya_predictions[0][0][-1])
-        tsya_border = 0.75
         if tsya_label == 0 and tsya_proba > tsya_border and tsya_count >= 1 and tsjya_count == 0:
             fixed_sentences[i] = sentence.replace("тся", "ться")
         elif tsya_label == 0 and tsya_proba > tsya_border and tsjya_count >= 1 and tsya_count == 0:
             fixed_sentences[i] = sentence.replace("ться", "тся")
+
+
+def _fix_nn(fixed_sentences,
+            nn_border=0.65,
+            nn_model_path="models/nn_predictor.bin",
+            bpe_model_path="models/opencorpora_bpe.model"):
+    nn_predictor = fasttext.load_model(nn_model_path)
+    bpe_model = sp_processor()
+    bpe_model.load(bpe_model_path)
+
+    for i, sentence in enumerate(fixed_sentences):
+        nn_count = sentence.count("нн")
+        if nn_count != 1:
+            continue
+        processed_sentence = " ".join(bpe_model.EncodeAsPieces(sentence.lower()))
+        nn_predictions = nn_predictor.predict(processed_sentence)
+        nn_proba = float(nn_predictions[1][0])
+        nn_label = int(nn_predictions[0][0][-1])
+        if nn_label == 0 and nn_proba > nn_border and nn_count == 1:
+            fixed_sentences[i] = sentence.replace("нн", "н")
 
 
 def _fix_izza_on_text(text):
@@ -173,6 +193,7 @@ def fix_mistakes(input_csv, output_csv):
 
     fixed_sentences = _fix_dictionary(original_sentences)
     _fix_tsya(fixed_sentences)
+    _fix_nn(fixed_sentences)
     fixed_sentences = _fix_izza(fixed_sentences)
     fixed_sentences = _fix_particles(fixed_sentences)
     fixed_sentences = _fix_neni(fixed_sentences)
