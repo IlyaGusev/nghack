@@ -1,0 +1,9 @@
+{
+    "image": "datasouls/python",
+    "entry_points": {
+        "intent": "python intent.py {input_csv} {output_csv}",
+        "grammar": "python grammar.py {input_csv} {output_csv}",
+        "support": "python support.py {input_csv} {output_csv}",
+        "callcenter": "python callcenter.py {input_csv} {output_csv}"
+    }
+}
