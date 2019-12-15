@@ -1,6 +1,7 @@
-import sys
-import pandas as pd
 import joblib
+import pandas as pd
+import scipy
+import sys
 
 
 _CLASSES = [
@@ -20,12 +21,17 @@ def preprocess(data):
 
 
 def predict(input_csv_path, output_csv_path):
-    model = load_model()
+    model, char_vectorizer, word_vectorizer = load_model()
 
     df_test = pd.read_csv(input_csv_path, index_col='id')
     df_test = preprocess(df_test)
 
-    predictions = model.predict(df_test['text'])
+    X_chars = char_vectorizer.transform(df_test['text'])
+    X_words = word_vectorizer.transform(df_test['text'])
+
+    X = scipy.sparse.hstack([X_chars, X_words])
+
+    predictions = model.predict(X)
     df_test['label'] = [_CLASSES[class_index] for class_index in predictions]
 
     df_test.to_csv(output_csv_path)
