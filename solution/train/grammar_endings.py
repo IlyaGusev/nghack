@@ -41,8 +41,6 @@ def train(input_file):
         for text, _ in train:
             temp.write(text + "\n")
         temp.close()
-        if not os.path.exists(model_path):
-            os.makedirs(model_path)
         cmd = "--input={} --model_prefix={} --vocab_size={} --model_type={}".format(
             temp.name,
             model_path,
