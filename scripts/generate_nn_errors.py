@@ -40,11 +40,11 @@ def generate_nn_errors(text):
                 symbol_index += 1
             else:
                 if symbol_index + 1 < len(token_text) and token_text[symbol_index + 1] == 'н':
-                    error_token_text = token_text[:symbol_index] + token_text[symbol_index + 1:]
-                    if _is_good_pair(token_text, error_token_text):
-                        yield (text[:token.start]
-                               + error_token_text
-                               + text[token.stop:])
+                #    error_token_text = token_text[:symbol_index] + token_text[symbol_index + 1:]
+                #    if _is_good_pair(token_text, error_token_text):
+                #        yield (text[:token.start]
+                #               + error_token_text
+                #               + text[token.stop:])
                     symbol_index += 2
                 else:
                     error_token_text = token_text[:symbol_index] + 'н' + token_text[symbol_index:]
