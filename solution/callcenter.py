@@ -17,12 +17,14 @@ zero_time = pd.to_datetime('00:00:00')
 
 SEC_PER_DAY = 60*60*24
 
+NA_VALUE = -1.2345
+
 
 def extract_features(data):
     times = data[RU_COLS].apply(pd.to_datetime)
     times.columns = EN_COLS
 
-    abs_times = times.apply(lambda x: (x - zero_time).dt.total_seconds()).fillna(-9999)
+    abs_times = times.apply(lambda x: (x - zero_time).dt.total_seconds()).fillna(NA_VALUE)
     abs_times.columns = [c + '_abs' for c in EN_COLS]
 
     day = abs_times / SEC_PER_DAY * 2 * np.pi
@@ -48,11 +50,18 @@ def extract_features(data):
     diffs = pd.DataFrame(index=times.index)
     for i, c1 in enumerate(EN_COLS):
         for j, c2 in enumerate(EN_COLS[(i + 1):]):
-            diffs['delta_{}_{}'.format(c1, c2)] = (times[c2] - times[c1]).dt.total_seconds().fillna(-9999)
+            diffs['delta_{}_{}'.format(c1, c2)] = (times[c2] - times[c1]).dt.total_seconds().fillna(NA_VALUE)
+
+    deltas_base = 'delta_call_start_time_call_end_time'
+
+    for c in diffs.columns:
+        d = diffs[c] / diffs[deltas_base]
+        diffs['rel_{}'.format(c)] = d
+
     x = pd.concat(
         [abs_times, day_sines, day_cosines, hour_sines, hour_cosines, minute_sines, minute_cosines, null_times, diffs],
         axis=1)
-    x[DUR_EN] = data[DUR_RU].fillna(-9999)
+    x[DUR_EN] = data[DUR_RU].fillna(NA_VALUE)
     x[DUR_EN + '_miss'] = data[DUR_RU].isnull().astype(int)
 
     devia = x['delta_oper_start_time_oper_end_time'] - x[DUR_EN]
