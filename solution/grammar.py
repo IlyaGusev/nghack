@@ -20,7 +20,7 @@ substrings_fixes = {
     "белее чем скромные": "более чем скромные",
     "без везти": "без вести",
     "в пошлом веке": "в прошлом веке",
-    "в течении года": "в течение года",
+    # "в течении года": "в течение года",
     "несколько не изменился": "нисколько не изменился",
     "не кто не может": "никто не может",
     "ни кому": "никому",
@@ -31,6 +31,29 @@ substrings_fixes = {
 
 _ALLOWED_POS_TAGS_FOR_TAKI = {'ADVB', 'VERB', 'INFN', 'PRCL'}
 _ALLOWED_POS_TAGS_FOR_TO = {'ADVB', 'NPRO'}
+
+_HARD_PRONOUNS = [
+    ('ввиду', 'в виду'),
+    ('вместо', 'в место'),
+    ('вследствие', 'в следствии'),
+    ('вследствие', 'в следствие'),
+    ('навстречу', 'на встречу'),
+    ('наподобие', 'на подобие'),
+    ('наподобие', 'на подобии'),
+    ('насчёт', 'на счёт'),
+    ('насчет', 'на счет'),
+    ("вслед", "в след"),
+    ("в виде", "ввиде"),
+    ("в течение", "в течении"),
+    ("в продолжение", "в продолжении"),
+    ("в заключение", "в заключении"),
+    ("в завершение", "в завершение"),
+    ("в отличие от", "в отличии от"),
+    ("в сравнении с", "в сравнение с"),
+    ("в связи с", "в связе с"),
+    ("по окончании", "по окончание"),
+    ("по прибытии", "по прибытие")
+]
 
 _MORPH = pymorphy2.MorphAnalyzer()
 
@@ -196,6 +219,35 @@ def _fix_particles(fixed_sentences):
     return [_fix_particles_on_text(text) for text in fixed_sentences]
 
 
+def _fix_pronouns(fixed_sentences,
+                  nn_border=0.65,
+                  nn_model_path="models/pronoun_model.bin",
+                  bpe_model_path="models/opencorpora_bpe.model"):
+    nn_predictor = fasttext.load_model(nn_model_path)
+    bpe_model = sp_processor()
+    bpe_model.load(bpe_model_path)
+
+    for i, sentence in enumerate(fixed_sentences):
+        for from_text, to_text in _HARD_PRONOUNS:
+            if (from_text in sentence or to_text in sentence
+                or from_text.capitalize() in sentence
+                or to_text.capitalize() in sentence
+            ):
+                processed_sentence = " ".join(bpe_model.EncodeAsPieces(sentence.lower()))
+                nn_predictions = nn_predictor.predict(processed_sentence)
+                nn_proba = float(nn_predictions[1][0])
+                nn_label = int(nn_predictions[0][0][-1])
+                if nn_label == 0 and nn_proba > nn_border:
+                    if from_text in sentence:
+                        fixed_sentences[i] = sentence.replace(from_text, to_text)
+                    elif from_text.capitalize() in sentence:
+                        fixed_sentences[i] = sentence.replace(from_text.capitalize(), to_text)
+                    elif to_text in sentence:
+                        fixed_sentences[i] = sentence.replace(to_text, from_text)
+                    else:
+                        fixed_sentences[i] = sentence.replace(to_text.capitalize(), from_text)
+
+
 def fix_mistakes(input_csv, output_csv):
     df_test = pandas.read_csv(input_csv, index_col='id')
     original_sentences = df_test['sentence_with_a_mistake'].tolist()
@@ -206,6 +258,7 @@ def fix_mistakes(input_csv, output_csv):
     fixed_sentences = _fix_izza(fixed_sentences)
     fixed_sentences = _fix_particles(fixed_sentences)
     _fix_merge_to(fixed_sentences)
+    _fix_pronouns(fixed_sentences)
 
     df_test['correct_sentence'] = fixed_sentences
     df_test.to_csv(output_csv)
