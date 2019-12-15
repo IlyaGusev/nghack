@@ -55,7 +55,7 @@ def train(train_data_path, output_path, val_data_path=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train', default='data/support_split_train.csv')
-    parser.add_argument('--valid', default='data/support_split_val.csv')
+    parser.add_argument('--valid', default=None)
     parser.add_argument('--output', default='models/support.pkl')
 
     args = parser.parse_args()
