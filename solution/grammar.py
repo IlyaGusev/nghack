@@ -111,7 +111,7 @@ def _fix_izza_on_text(text):
     result_tokens = []
     i = 0
     while i < len(tokens) - 1:
-        if tokens[i].text.lower() == 'из' and tokens[i+1].text.lower() == 'за':
+        if tokens[i].text.lower() == 'из' and (tokens[i+1].text.lower() == 'за' or tokens[i+1].text.lower() == 'под'):
             result_tokens.append(
                 Substring(tokens[i].start, tokens[i+1].stop, tokens[i].text + '-' + tokens[i+1].text)
             )
