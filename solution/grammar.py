@@ -1,6 +1,8 @@
 import sys
 import argparse
 import pandas
+import fasttext
+from sentencepiece import SentencePieceProcessor as sp_processor
 from razdel import tokenize
 
 tokens_fixes = {
@@ -29,6 +31,12 @@ def fix_mistakes(input_csv, output_csv):
     df_test = pandas.read_csv(input_csv, index_col='id')
     original_sentences = df_test['sentence_with_a_mistake'].tolist()
 
+    tsya_model_path = "models/tsya_predictor.bin"
+    bpe_model_path = "models/grammar_bpe.model"
+    tsya_predictor = fasttext.load_model(tsya_model_path)
+    bpe_model = sp_processor()
+    bpe_model.load(bpe_model_path)
+
     # Substring fixes
     for i, sentence in enumerate(original_sentences):
         for key, value in substrings_fixes.items():
@@ -54,6 +62,20 @@ def fix_mistakes(input_csv, output_csv):
         for token in tokens:
             fixed_sentence = fixed_sentence[:token.start] + token.text + fixed_sentence[token.stop:]
         fixed_sentences.append(fixed_sentence)
+
+    for i, sentence in enumerate(fixed_sentences):
+        tsya_count = sentence.count("тся")
+        tsjya_count = sentence.count("ться")
+        if tsya_count + tsjya_count != 1:
+            continue
+        processed_sentence = " ".join(bpe_model.EncodeAsPieces(sentence))
+        tsya_predictions = tsya_predictor.predict(processed_sentence)
+        tsya_proba = float(tsya_predictions[1][0])
+        tsya_label = int(tsya_predictions[0][0][-1])
+        if tsya_label == 0 and tsya_proba > 0.9 and tsya_count == 1:
+            fixed_sentences[i] = sentence.replace("тся", "ться")
+        elif tsya_label == 0 and tsya_proba > 0.9 and tsjya_count == 1:
+            fixed_sentences[i] = sentence.replace("ться", "тся")
 
     df_test['correct_sentence'] = fixed_sentences
     df_test.to_csv(output_csv)
