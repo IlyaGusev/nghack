@@ -33,10 +33,17 @@ if __name__ == '__main__':
 
     model_path = "models/intent.ftz"
     model = fasttext.load_model(model_path)
-    texts = df_test["text"].tolist()
-    texts = [str(text).replace("\n", " ") for text in texts]
+
+    def process_text(text):
+        text = str(text).strip().lower()
+        text = text.replace('\n', ' ')
+        text = text.strip("“ ”‘ ’«»\"'?!.;: ")
+        return text
+
+    texts = [process_text(text) for text in df_test["text"].tolist()]
     preds = model.predict(texts)
 
     labels = [to_label(label[0]) for label in preds[0]]
     df_test['label'] = labels
+
     df_test.to_csv(output_csv)
