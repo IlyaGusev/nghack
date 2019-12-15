@@ -150,7 +150,9 @@ def denormalize(orig, toks0, toks):
                 i0 += 2
                 i1 += 1
         else:
-            raise ValueError('{} is wrong with i0={}, i1={}'.format(result, i0, i1))
+            #raise ValueError('{} is wrong with i0={}, i1={}'.format(result, i0, i1))
+            # we don't know what to do and decide to do nothing
+            return orig
     result = result.strip()
     while orig.endswith(' '):
         orig = orig[:(-1)]
