@@ -1,5 +1,5 @@
 {
-    "image": "phoenix120/nghack3",
+    "image": "phoenix120/nghack4",
     "entry_points": {
         "intent": "python3 intent.py {input_csv} {output_csv}",
         "grammar": "python3 grammar.py {input_csv} {output_csv}",
