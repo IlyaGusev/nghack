@@ -27,24 +27,14 @@ substrings_fixes = {
     "бес толку": "бестолку",
 }
 
-def fix_mistakes(input_csv, output_csv):
-    df_test = pandas.read_csv(input_csv, index_col='id')
-    original_sentences = df_test['sentence_with_a_mistake'].tolist()
 
-    tsya_model_path = "models/tsya_predictor.bin"
-    bpe_model_path = "models/grammar_bpe.model"
-    tsya_predictor = fasttext.load_model(tsya_model_path)
-    bpe_model = sp_processor()
-    bpe_model.load(bpe_model_path)
-
-    # Substring fixes
+def _fix_dictionary(original_sentences):
     for i, sentence in enumerate(original_sentences):
         for key, value in substrings_fixes.items():
             if key in sentence or key.capitalize() in sentence:
                 original_sentences[i] = sentence.replace(key, value)
                 original_sentences[i] = original_sentences[i].replace(key.capitalize(), value.capitalize())
 
-    # Tokens fixes
     tokenized_sentences = [(sentence, list(tokenize(sentence))) for sentence in original_sentences]
     fixed_sentences = []
     for sentence, tokens in tokenized_sentences:
@@ -63,6 +53,16 @@ def fix_mistakes(input_csv, output_csv):
             fixed_sentence = fixed_sentence[:token.start] + token.text + fixed_sentence[token.stop:]
         fixed_sentences.append(fixed_sentence)
 
+    return fixed_sentences
+
+
+def _fix_tsya(fixed_sentences):
+    tsya_model_path = "models/tsya_predictor.bin"
+    bpe_model_path = "models/grammar_bpe.model"
+    tsya_predictor = fasttext.load_model(tsya_model_path)
+    bpe_model = sp_processor()
+    bpe_model.load(bpe_model_path)
+
     for i, sentence in enumerate(fixed_sentences):
         tsya_count = sentence.count("тся")
         tsjya_count = sentence.count("ться")
@@ -77,8 +77,17 @@ def fix_mistakes(input_csv, output_csv):
         elif tsya_label == 0 and tsya_proba > 0.9 and tsjya_count == 1:
             fixed_sentences[i] = sentence.replace("ться", "тся")
 
+
+def fix_mistakes(input_csv, output_csv):
+    df_test = pandas.read_csv(input_csv, index_col='id')
+    original_sentences = df_test['sentence_with_a_mistake'].tolist()
+
+    fixed_sentences = _fix_dictionary(original_sentences)
+    _fix_tsya(fixed_sentences)
+
     df_test['correct_sentence'] = fixed_sentences
     df_test.to_csv(output_csv)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
