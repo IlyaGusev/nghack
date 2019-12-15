@@ -7,8 +7,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('input', help='input.csv')
     parser.add_argument('output', help='output.csv')
-    parser.add_argument('--labels', help='fastText labels', required=True)
-    parser.add_argument('--model', help='fastText model', required=True)
+    parser.add_argument('--labels', help='fastText labels', default='models/intent_labels.csc')
+    parser.add_argument('--model', help='fastText model', default='models/intent_ver1.ftz')
 
     return parser.parse_args()
 
