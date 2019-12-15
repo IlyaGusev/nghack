@@ -63,6 +63,7 @@ def fix_mistakes(input_csv, output_csv):
             fixed_sentence = fixed_sentence[:token.start] + token.text + fixed_sentence[token.stop:]
         fixed_sentences.append(fixed_sentence)
 
+    # Tsya
     for i, sentence in enumerate(fixed_sentences):
         tsya_count = sentence.count("тся")
         tsjya_count = sentence.count("ться")
@@ -72,9 +73,10 @@ def fix_mistakes(input_csv, output_csv):
         tsya_predictions = tsya_predictor.predict(processed_sentence)
         tsya_proba = float(tsya_predictions[1][0])
         tsya_label = int(tsya_predictions[0][0][-1])
-        if tsya_label == 0 and tsya_proba > 0.9 and tsya_count == 1:
+        tsya_border = 0.8
+        if tsya_label == 0 and tsya_proba > tsya_border and tsya_count == 1:
             fixed_sentences[i] = sentence.replace("тся", "ться")
-        elif tsya_label == 0 and tsya_proba > 0.9 and tsjya_count == 1:
+        elif tsya_label == 0 and tsya_proba > tsya_border and tsjya_count == 1:
             fixed_sentences[i] = sentence.replace("ться", "тся")
 
     df_test['correct_sentence'] = fixed_sentences

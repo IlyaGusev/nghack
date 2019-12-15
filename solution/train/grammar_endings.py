@@ -35,8 +35,8 @@ def train(input_file):
     train = records[:border]
     val = records[border:]
 
-    model_path = "subword_models"
-    if False:
+    model_path = "subword_model"
+    if True:
         temp = tempfile.NamedTemporaryFile(mode="w", delete=False)
         for text, _ in train:
             temp.write(text + "\n")
@@ -44,7 +44,7 @@ def train(input_file):
         cmd = "--input={} --model_prefix={} --vocab_size={} --model_type={}".format(
             temp.name,
             model_path,
-            50000,
+            30000,
             "bpe"
         )
         sp_trainer.Train(cmd)
