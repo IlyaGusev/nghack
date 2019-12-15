@@ -1,15 +1,6 @@
-import argparse
+import sys
 import fasttext
 import pandas
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('input', help='input.csv')
-    parser.add_argument('output', help='output.csv')
-    parser.add_argument('--model', help='fastText model', default='models/intent.ftz')
-
-    return parser.parse_args()
 
 
 TO_LABEL = {
@@ -35,12 +26,17 @@ def to_label(ft):
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    input_csv = sys.argv[1]
+    output_csv = sys.argv[2]
 
-    df_test = pandas.read_csv(args.input, index_col='id')
+    df_test = pandas.read_csv(input_csv, index_col='id')
 
-    model = fasttext.load_model(args.model)
-    preds = model.predict(list(df_test.text.values))
+    model_path = "models/intent.ftz"
+    model = fasttext.load_model(model_path)
+    texts = df_test["text"].tolist()
+    texts = [str(text).replace("\n", " ") for text in texts]
+    preds = model.predict(texts)
 
-    df_test['label'] = list(map(lambda x: to_label(x[0]), preds[0]))
-    df_test.to_csv(args.output)
+    labels = [to_label(label[0]) for label in preds[0]]
+    df_test['label'] = labels
+    df_test.to_csv(output_csv)
