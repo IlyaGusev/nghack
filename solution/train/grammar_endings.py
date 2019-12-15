@@ -28,7 +28,7 @@ def train(input_file):
             text = text.replace("\n", " ").lower()
             tjsya_count = text.count("ться")
             tsya_count = text.count("тся")
-            if (tjsya_count + tsya_count) == 1:
+            if (tjsya_count != 0 and  tsya_count == 0) or (tjsya_count == 0 and  tsya_count != 0):
                 records.append((text, label))
     random.shuffle(records)
     border = int(0.8 * len(records))

@@ -24,7 +24,7 @@ substrings_fixes = {
     "ни кому": "никому",
     "одно и тоже": "одно и то же",
     "как то так же": "как-то так же",
-    "бес толку": "бестолку",
+    "бес толку": "бестолку"
 }
 
 def fix_mistakes(input_csv, output_csv):
@@ -73,10 +73,10 @@ def fix_mistakes(input_csv, output_csv):
         tsya_predictions = tsya_predictor.predict(processed_sentence)
         tsya_proba = float(tsya_predictions[1][0])
         tsya_label = int(tsya_predictions[0][0][-1])
-        tsya_border = 0.8
-        if tsya_label == 0 and tsya_proba > tsya_border and tsya_count == 1:
+        tsya_border = 0.75
+        if tsya_label == 0 and tsya_proba > tsya_border and tsya_count >= 1 and tsjya_count == 0:
             fixed_sentences[i] = sentence.replace("тся", "ться")
-        elif tsya_label == 0 and tsya_proba > tsya_border and tsjya_count == 1:
+        elif tsya_label == 0 and tsya_proba > tsya_border and tsjya_count >= 1 and tsya_count == 0:
             fixed_sentences[i] = sentence.replace("ться", "тся")
 
     df_test['correct_sentence'] = fixed_sentences
