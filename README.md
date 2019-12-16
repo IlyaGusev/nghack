@@ -10,21 +10,23 @@
 Вся запускабельная часть находится в папке `solution`.
 Часть подготовительных скриптов и блокнотов лежит в папке `scripts`.
 
-- Классификация интентов
+- Классификация интентов:
+    - Усреднение предсказаний fasttext и логистической регрессии
+    - [Применялка](solution/intent.py)
 - Исправление ошибок:
     - [Применялка](solution/grammar.py)
     - Эвристики для обработки уверенно распознаваемых ошибок по словарю
     - Эвристики для обработки написания частиц *то*/*либо*/*нибудь*/*таки* через дефис с помощью pymorphy2
     - Обучение fasttext bpe-level моделей для детекции ошибок в написании *н/нн*, *тся/ться*, *чтобы/что бы*, *тоже/то же*, предлогов типа *в течение* и т.д.:
         - Генерация выборки по корпусу для обучения в scripts/generate_*_errors.py
-        - Генерация данных для обучения fasttext в solution/train/grammar_*.py
+        - Генерация данных для обучения fasttext в scripts/train/grammar_*.py
         - Обучение: `fasttext supervised -input <train_data> -output <model_name> -dim 100 -epoch 30 -lr 0.2`
     - Исправление "не/ни" и опечаток: n-граммная (статистическая!) языковая модель и эвристики для генерации гипотез.
       [блокнот](scripts/ngram_grammar.ipynb), [n-grams](solution/models/gf3.pkl),
       [применялка](solution/grammar_ngram_lm.py)
 - Предсказание оценки:
     - Логистическая регрессия поверх словных уни- и биграмм + символьных 1-5 грамм, взвешенных по TfIdf
-    - [Обучение](solution/train/support.py), [модель](solution/models/support.pkl), [применялка](solution/support.py)
+    - [Обучение](scripts/train/support.py), [модель](solution/models/support.pkl), [применялка](solution/support.py)
 - Обнаружение фальсификаций: [блокнот](scripts/callcenter.ipynb), [модель](solution/models/call_center.model),
   [применялка модели](/solution/callcenter.py). Довольно простой фича-инжиниринг и катбуст.
 
