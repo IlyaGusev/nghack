@@ -87,7 +87,7 @@ def _fix_dictionary(original_sentences):
 
 
 def _fix_tsya(fixed_sentences,
-              tsya_border=0.65,
+              tsya_border=0.55,
               tsya_model_path="models/tsya_predictor.bin",
               bpe_model_path="models/grammar_bpe.model"):
     tsya_predictor = fasttext.load_model(tsya_model_path)
@@ -110,7 +110,7 @@ def _fix_tsya(fixed_sentences,
 
 
 def _fix_nn(fixed_sentences,
-            nn_border=0.65,
+            nn_border=0.6,
             nn_model_path="models/nn_predictor.bin",
             bpe_model_path="models/opencorpora_bpe.model"):
     nn_predictor = fasttext.load_model(nn_model_path)
@@ -129,7 +129,7 @@ def _fix_nn(fixed_sentences,
             fixed_sentences[i] = sentence.replace("нн", "н")
 
 def _fix_merge_to(fixed_sentences,
-                  border=0.65,
+                  border=0.6,
                   model_path="models/to_merge_predictor.bin",
                   bpe_model_path="models/opencorpora_bpe.model"):
     predictor = fasttext.load_model(model_path)
